@@ -4,13 +4,16 @@
   "description": "��#\u0000 \u0000G\u0000r\u0000a\u0000f\u0000a\u0000n\u0000a\u0000_\u0000k\u00006\u0000\r\u0000 \u0000",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,json5,css,scss,less,html,vue,yaml,yml,md,mdx,graphql}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,json5,css,scss,less,html,vue,yaml,yml,md,mdx,graphql}\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "@types/k6": "^2.2.0"
+    "@types/k6": "^2.2.0",
+    "prettier": "^3.6.2"
   }
 }
