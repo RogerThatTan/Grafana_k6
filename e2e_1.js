@@ -1,8 +1,12 @@
 import { sleep, check, group } from 'k6';
+import { Rate, Counter } from 'k6/metrics';
 import http from 'k6/http';
 const BASE_URL = 'http://localhost:3333';
 const USERNAME = `tanvir${randomString(7)}1`;
 const PASSWORD = 'tata22223@yopmail.com1!A';
+const authencticationRate = new Rate('Authentication_rate'); //1 ( Pass) , 0 (Failed) {1 will be added per pass and  0 for per fail}
+
+const sucessfulOrders = new Counter('sucessful_orders');
 
 function randomString(length) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -26,6 +30,9 @@ export const options = {
     http_req_duration: ['p(95)<350'],
     checks: ['rate>0.90'],
     iteration_duration: ['p(95) < 8000'],
+    'group_duration{group:::Order Management}': ['p(95)<550'],
+    Authentication_rate: ['rate>0.90'],
+    sucessful_orders: ['count>5'],
   },
 };
 
@@ -83,9 +90,11 @@ export default function () {
     });
 
     if (userAuthenticated) {
+      authencticationRate.add(1);
       authToken = loginResponse.json('token');
       console.log(`user authencticate successfully: ${USERNAME}`);
     } else {
+      authencticationRate.add(0);
       console.log(`user authencticate failed: ${USERNAME} - ${loginResponse.status} - ${loginResponse.body}`);
     }
   });
@@ -113,11 +122,30 @@ export default function () {
     });
 
     if (orderCreated) {
+      sucessfulOrders.add(1);
       orderId = createOrderResponse.json('pizza.id');
       console.log(`Order created successfully: ${orderId}`);
     } else {
       console.error(`Order creation failed: ${USERNAME} - ${createOrderResponse.status} - ${createOrderResponse.body}`);
     }
     sleep(0.5);
+
+    //retreive order
+    const retreiveOrderResponse = http.get(`${BASE_URL}/api/pizza/${orderId}`, params);
+
+    const orderRetrieved = check(retreiveOrderResponse, {
+      'Order creation status is 200': (retreiveOrderResponse) => retreiveOrderResponse.status === 200,
+      'verify that order response contains pizza id': (retreiveOrderResponse) =>
+        retreiveOrderResponse.json('id') === orderId,
+      'Order name matches': (retreiveOrderResponse) => retreiveOrderResponse.json('name') === orderPayload.customName,
+    });
+
+    if (orderRetrieved) {
+      console.log(`Order retreived successfully -> ${orderId}`);
+    } else {
+      console.error(
+        `Order retreived failed: ${USERNAME} - ${retreiveOrderResponse.status} - ${retreiveOrderResponse.body}`,
+      );
+    }
   });
 }
