@@ -1,0 +1,6 @@
+[
+  {
+    "username": "performance-test-user",
+    "password": "replace-in-ci-secret"
+  }
+]
